@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 // Import your new firebase config and firestore functions
-import { db } from './firebase';
+import { db } from './firebase'; 
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 // Helper function to shuffle an array (Fisher-Yates algorithm)
@@ -76,6 +76,10 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [allLoaded, setAllLoaded] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    
+    // --- FIX FOR RACE CONDITION ---
+    // Use a ref as a synchronous lock to prevent multiple fetches from firing.
+    const loadingRef = useRef(false);
 
     // Part 1: Fetch all document IDs and shuffle them once
     useEffect(() => {
@@ -92,19 +96,21 @@ function App() {
 
     // Part 2: Fetch the next batch of photos using the shuffled IDs
     const fetchPhotoBatch = useCallback(async () => {
-        // Stop if we're already loading, or if all photos have been loaded
-        if (loading || allLoaded) return;
-
-        setLoading(true);
-        const nextBatchIds = shuffledPhotoIds.slice(currentIndex, currentIndex + BATCH_SIZE);
-
-        if (nextBatchIds.length === 0) {
-            setAllLoaded(true);
-            setLoading(false);
-            return;
-        }
+        // Use the ref as a synchronous lock. If it's already loading or all photos are loaded, stop.
+        if (loadingRef.current || allLoaded) return;
+        
+        // --- LOCK ---
+        loadingRef.current = true;
+        setLoading(true); // Set state for UI indicator
 
         try {
+            const nextBatchIds = shuffledPhotoIds.slice(currentIndex, currentIndex + BATCH_SIZE);
+
+            if (nextBatchIds.length === 0 && shuffledPhotoIds.length > 0) {
+                setAllLoaded(true);
+                return;
+            }
+
             // Create an array of promises, each fetching one document
             const photoPromises = nextBatchIds.map(id => getDoc(doc(db, 'photos', id)));
             const photoDocs = await Promise.all(photoPromises);
@@ -115,26 +121,32 @@ function App() {
                 ...d.data(),
                 index: currentIndex + i // For the staggered animation
             }));
-
+            
+            // This logic ensures that even if a batch is fetched twice,
+            // we only add unique photos to the state.
             setPhotos(prevPhotos => {
                 const existingIds = new Set(prevPhotos.map(p => p.id));
                 const uniqueNewPhotos = newPhotos.filter(p => !existingIds.has(p.id));
                 return [...prevPhotos, ...uniqueNewPhotos];
             });
+            
             setCurrentIndex(prev => prev + BATCH_SIZE);
         } catch (error) {
             console.error("Error fetching photo batch from Firestore:", error);
+        } finally {
+            // --- UNLOCK ---
+            // This 'finally' block ensures the lock is always released, even if an error occurs.
+            setLoading(false);
+            loadingRef.current = false;
         }
-
-        setLoading(false);
-    }, [currentIndex, shuffledPhotoIds, loading, allLoaded]);
+    }, [currentIndex, shuffledPhotoIds, allLoaded]);
 
     // This effect runs whenever the shuffled IDs are ready, to load the first batch
     useEffect(() => {
         if (shuffledPhotoIds.length > 0 && photos.length === 0) {
             fetchPhotoBatch();
         }
-    }, [shuffledPhotoIds, photos, fetchPhotoBatch]);
+    }, [shuffledPhotoIds, photos.length, fetchPhotoBatch]);
 
 
     // This useEffect handles the infinite scroll logic.
@@ -145,6 +157,7 @@ function App() {
             }
         };
         window.addEventListener('scroll', handleScroll);
+        // Cleanup function to remove the event listener when the component unmounts.
         return () => window.removeEventListener('scroll', handleScroll);
     }, [fetchPhotoBatch]);
 
@@ -156,9 +169,9 @@ function App() {
             <header className="App-header"><h1>Berlin</h1></header>
             <main className="photo-grid">
                 {photos.map((photo) => (
-                    <PhotoItem
-                        key={photo.id}
-                        photo={photo}
+                    <PhotoItem 
+                        key={photo.id} 
+                        photo={photo} 
                         onClick={handleImageClick}
                     />
                 ))}
