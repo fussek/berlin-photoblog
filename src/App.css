@@ -57,6 +57,8 @@ body {
 }
 
 .photo-item img {
+  /* --- THE FIX --- */
+  background-color: #000; /* This makes the image placeholder itself black */
   position: absolute;
   top: 0;
   left: 0;

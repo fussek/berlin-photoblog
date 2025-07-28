@@ -46,11 +46,13 @@ const PhotoItem = ({ photo, onClick }) => {
             ref={itemRef}
             className={`photo-item ${hasAnimated ? 'slide-in' : ''}`}
             style={{ animationDelay }}
-            // Use the photo's 'url' field from Firestore for the click handler
             onClick={() => onClick(photo.url)}
         >
-            {/* Use the photo's 'url' and 'alt_description' fields */}
-            <img src={photo.url} alt={photo.alt_description} />
+            {/* Reverted to the simpler img tag for progressive rendering */}
+            <img 
+                src={photo.url} 
+                alt={photo.alt_description}
+            />
         </div>
     );
 };
@@ -76,14 +78,9 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [allLoaded, setAllLoaded] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
-    
-    // --- NEW: State for header opacity ---
     const [headerOpacity, setHeaderOpacity] = useState(1);
-
-    // Use a ref as a synchronous lock to prevent multiple fetches from firing.
     const loadingRef = useRef(false);
 
-    // Part 1: Fetch all document IDs and shuffle them once
     useEffect(() => {
         const fetchAllPhotoIds = async () => {
             setLoading(true);
@@ -96,14 +93,11 @@ function App() {
         fetchAllPhotoIds();
     }, []);
 
-    // Part 2: Fetch the next batch of photos using the shuffled IDs
     const fetchPhotoBatch = useCallback(async () => {
-        // Use the ref as a synchronous lock. If it's already loading or all photos are loaded, stop.
         if (loadingRef.current || allLoaded) return;
         
-        // --- LOCK ---
         loadingRef.current = true;
-        setLoading(true); // Set state for UI indicator
+        setLoading(true);
 
         try {
             const nextBatchIds = shuffledPhotoIds.slice(currentIndex, currentIndex + BATCH_SIZE);
@@ -113,19 +107,15 @@ function App() {
                 return;
             }
 
-            // Create an array of promises, each fetching one document
             const photoPromises = nextBatchIds.map(id => getDoc(doc(db, 'photos', id)));
             const photoDocs = await Promise.all(photoPromises);
 
-            // Convert the documents to a usable format and add the animation index
             const newPhotos = photoDocs.map((d, i) => ({
                 id: d.id,
                 ...d.data(),
-                index: currentIndex + i // For the staggered animation
+                index: currentIndex + i
             }));
             
-            // This logic ensures that even if a batch is fetched twice,
-            // we only add unique photos to the state.
             setPhotos(prevPhotos => {
                 const existingIds = new Set(prevPhotos.map(p => p.id));
                 const uniqueNewPhotos = newPhotos.filter(p => !existingIds.has(p.id));
@@ -136,38 +126,30 @@ function App() {
         } catch (error) {
             console.error("Error fetching photo batch from Firestore:", error);
         } finally {
-            // --- UNLOCK ---
-            // This 'finally' block ensures the lock is always released, even if an error occurs.
             setLoading(false);
             loadingRef.current = false;
         }
     }, [currentIndex, shuffledPhotoIds, allLoaded]);
 
-    // This effect runs whenever the shuffled IDs are ready, to load the first batch
     useEffect(() => {
         if (shuffledPhotoIds.length > 0 && photos.length === 0) {
             fetchPhotoBatch();
         }
     }, [shuffledPhotoIds, photos.length, fetchPhotoBatch]);
 
-
-    // This useEffect handles all scroll-related effects
     useEffect(() => {
         const handleScroll = () => {
-            // --- NEW: Handle header fade ---
-            const fadeOutDistance = 250; // How many pixels to scroll to fade out completely
+            const fadeOutDistance = 250;
             const currentScrollY = window.scrollY;
             const newOpacity = Math.max(0, 1 - currentScrollY / fadeOutDistance);
             setHeaderOpacity(newOpacity);
 
-            // --- Handle infinite scroll ---
             if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 500) {
                 fetchPhotoBatch();
             }
         };
         
         window.addEventListener('scroll', handleScroll);
-        // Cleanup function to remove the event listener when the component unmounts.
         return () => window.removeEventListener('scroll', handleScroll);
     }, [fetchPhotoBatch]);
 
@@ -176,7 +158,6 @@ function App() {
 
     return (
         <div className="App">
-            {/* --- NEW: Added style for opacity --- */}
             <header className="App-header" style={{ opacity: headerOpacity }}>
                 <h1>Berlin</h1>
             </header>
