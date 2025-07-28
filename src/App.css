@@ -1,0 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300&family=Roboto:wght@700&display=swap');
+
+/* General Body and App Styling */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #000000; /* Black background */
+  color: white;
+}
+
+.App {
+  text-align: center;
+}
+
+/* Header Styling */
+.App-header {
+  padding: 40px 20px;
+}
+
+.App-header h1 {
+  font-family: 'Montserrat', sans-serif; /* Use the new font */
+  font-size: 13rem;
+  font-weight: 100;
+  margin: 0;
+  color: #ffffff;
+}
+
+/* Photo Grid Layout */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 columns grid */
+  gap: 20px; /* Space between images */
+  padding: 20px 8%; /* Increased side margins (8% of viewport width) */
+  max-width: 1600px; /* Optional: max-width for very large screens */
+  margin: 0 auto; /* Center the grid container */
+}
+
+
+/* Individual Photo Item Styling */
+.photo-item {
+  width: 100%;
+  padding-bottom: 133.33%; /* This creates the 3:4 aspect ratio (4 / 3 * 100) */
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0; /* Start as invisible for the animation */
+  transform: translateY(30px); /* Start slightly lower for slide-in effect */
+}
+
+.photo-item.slide-in {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+.photo-item img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures the image covers the area without distortion */
+  transition: transform 0.3s ease;
+}
+
+.photo-item:hover img {
+    transform: scale(1.05); /* Slight zoom on hover */
+}
+
+
+/* Slide-in Animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* Loading Indicator */
+.loading-indicator {
+    padding: 40px;
+    font-size: 1.2rem;
+    color: #555;
+}
+
+
+/* Modal (Popup) Styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.modal-content img {
+  display: block;
+  max-width: 100%;
+  max-height: 90vh; /* Make sure image respects viewport height */
+  border-radius: 4px;
+}
+
+.modal-close {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: white;
+  color: black;
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+  padding: 0;
+  z-index: 1001;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .photo-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns on tablets */
+    padding: 20px 4%; /* Adjust margins for smaller screens */
+  }
+  .App-header h1 {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .photo-grid {
+    grid-template-columns: 1fr; /* 1 column on mobile */
+    padding: 20px 4%;
+  }
+   .App-header h1 {
+    font-size: 2.5rem;
+  }
+}
