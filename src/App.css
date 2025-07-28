@@ -123,22 +123,17 @@ body {
 
 .modal-close {
   position: absolute;
-  top: -10px;
-  right: -10px;
-  background: white;
-  color: black;
-  border: none;
-  border-radius: 50%;
-  width: 35px;
-  height: 35px;
-  font-size: 24px;
-  font-weight: bold;
+  top: 10px;  /* Position inside the top edge */
+  right: 15px; /* Position inside the right edge */
+  background: transparent; /* No background */
+  border: none; /* No border */
+  color: white; /* White 'X' */
+  font-size: 3rem; /* Big font size */
+  font-weight: 300; /* Thinner font weight */
   cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   line-height: 1;
   padding: 0;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.9); /* Add shadow for visibility */
   z-index: 1001;
 }
 

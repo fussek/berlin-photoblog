@@ -77,7 +77,9 @@ function App() {
     const [allLoaded, setAllLoaded] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     
-    // --- FIX FOR RACE CONDITION ---
+    // --- NEW: State for header opacity ---
+    const [headerOpacity, setHeaderOpacity] = useState(1);
+
     // Use a ref as a synchronous lock to prevent multiple fetches from firing.
     const loadingRef = useRef(false);
 
@@ -149,13 +151,21 @@ function App() {
     }, [shuffledPhotoIds, photos.length, fetchPhotoBatch]);
 
 
-    // This useEffect handles the infinite scroll logic.
+    // This useEffect handles all scroll-related effects
     useEffect(() => {
         const handleScroll = () => {
+            // --- NEW: Handle header fade ---
+            const fadeOutDistance = 250; // How many pixels to scroll to fade out completely
+            const currentScrollY = window.scrollY;
+            const newOpacity = Math.max(0, 1 - currentScrollY / fadeOutDistance);
+            setHeaderOpacity(newOpacity);
+
+            // --- Handle infinite scroll ---
             if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 500) {
                 fetchPhotoBatch();
             }
         };
+        
         window.addEventListener('scroll', handleScroll);
         // Cleanup function to remove the event listener when the component unmounts.
         return () => window.removeEventListener('scroll', handleScroll);
@@ -166,7 +176,10 @@ function App() {
 
     return (
         <div className="App">
-            <header className="App-header"><h1>Berlin</h1></header>
+            {/* --- NEW: Added style for opacity --- */}
+            <header className="App-header" style={{ opacity: headerOpacity }}>
+                <h1>Berlin</h1>
+            </header>
             <main className="photo-grid">
                 {photos.map((photo) => (
                     <PhotoItem 
