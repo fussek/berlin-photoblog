@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 // Import your new firebase config and firestore functions
-import { db } from './firebase'; 
+import { db } from './firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 // Helper function to shuffle an array (Fisher-Yates algorithm)
@@ -115,8 +115,12 @@ function App() {
                 ...d.data(),
                 index: currentIndex + i // For the staggered animation
             }));
-            
-            setPhotos(prev => [...prev, ...newPhotos]);
+
+            setPhotos(prevPhotos => {
+                const existingIds = new Set(prevPhotos.map(p => p.id));
+                const uniqueNewPhotos = newPhotos.filter(p => !existingIds.has(p.id));
+                return [...prevPhotos, ...uniqueNewPhotos];
+            });
             setCurrentIndex(prev => prev + BATCH_SIZE);
         } catch (error) {
             console.error("Error fetching photo batch from Firestore:", error);
@@ -152,9 +156,9 @@ function App() {
             <header className="App-header"><h1>Berlin</h1></header>
             <main className="photo-grid">
                 {photos.map((photo) => (
-                    <PhotoItem 
-                        key={photo.id} 
-                        photo={photo} 
+                    <PhotoItem
+                        key={photo.id}
+                        photo={photo}
                         onClick={handleImageClick}
                     />
                 ))}
